@@ -9,6 +9,8 @@ public class CubeImpostorGenerator : EditorWindow
 {
     GameObject sourceObject;
     int textureSize = 512;
+    private readonly int[] textureSizeOptions = { 64, 128, 256, 512, 1024, 2048 };
+    private int selectedTextureSizeIndex = 3; // Default to 512 (index 3 in the array)
     float trimAmount = 0f;
     Shader selectedShader;
     bool createLOD = true;
@@ -50,9 +52,10 @@ public class CubeImpostorGenerator : EditorWindow
             new GUIContent("Source Object", "The GameObject to create an impostor for."),
             sourceObject, typeof(GameObject), true);
 
-        textureSize = EditorGUILayout.IntField(
-            new GUIContent("Atlas Texture Size", "The size of the final atlas texture. Higher values result in better quality but larger file size."),
-            textureSize);
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PrefixLabel(new GUIContent("Atlas Texture Size", "The size of the final atlas texture. Higher values result in better quality but larger file size."));
+        selectedTextureSizeIndex = EditorGUILayout.Popup(selectedTextureSizeIndex, Array.ConvertAll(textureSizeOptions, x => x.ToString()));
+        EditorGUILayout.EndHorizontal();
 
         trimAmount = EditorGUILayout.Slider(
             new GUIContent("Trim Amount", "Adjusts the trimming of empty space around the impostor. Positive values increase trimming, negative values add padding."),
@@ -158,6 +161,8 @@ public class CubeImpostorGenerator : EditorWindow
             captureCamera.cullingMask = 1 << BakingLayer;
 
             Bounds bounds = CalculateBounds(sourceObject);
+
+            textureSize = textureSizeOptions[selectedTextureSizeIndex];
 
             // Create RenderTexture
             RenderTexture rt = new RenderTexture(textureSize, textureSize, 24);
@@ -322,41 +327,30 @@ public class CubeImpostorGenerator : EditorWindow
                     lodGroup = Undo.AddComponent<LODGroup>(sourceObject);
                     // Register creation for Undo
                     Undo.RegisterCreatedObjectUndo(lodGroup, "Create LOD Group");
-
-                    // Get all renderers from the source object and its children
-                    Renderer[] originalRenderers = sourceObject.GetComponentsInChildren<Renderer>();
-
-                    // Create LOD0 with original renderers (higher detail)
-                    LOD lod0 = new LOD(0.6f, originalRenderers);
-
-                    // Create LOD1 with impostor renderer (lower detail)
-                    Renderer impostorRenderer = impostorCube.GetComponent<Renderer>();
-                    LOD lod1 = new LOD(0.0f, new Renderer[] { impostorRenderer });
-
-                    // Assign the two LOD levels to the LODGroup
-                    lodGroup.SetLODs(new LOD[] { lod0, lod1 });
-                    lodGroup.RecalculateBounds();
-
-
                 }
 
-                // Get existing LODs
-                List<LOD> currentLODs = lodGroup.GetLODs().ToList();
+                // Get all renderers from the source object and its children
+                Renderer[] originalRenderers = sourceObject.GetComponentsInChildren<Renderer>();
 
-                // Create new LOD level for the impostor
-                LOD newLOD = new LOD(0.0f, new Renderer[] { impostorCube.GetComponent<Renderer>() });
-                currentLODs.Add(newLOD);
+                // Remove the impostor renderer from the original renderers if it's there
+                originalRenderers = originalRenderers.Where(r => r.gameObject != impostorCube).ToArray();
 
-                // Set the updated LODs
-                lodGroup.SetLODs(currentLODs.ToArray());
+                // Create LOD0 with original renderers (higher detail)
+                LOD lod0 = new LOD(0.5f, originalRenderers);
+
+                // Create LOD1 with impostor renderer (lower detail)
+                Renderer impostorRenderer = impostorCube.GetComponent<Renderer>();
+                LOD lod1 = new LOD(0.01f, new Renderer[] { impostorRenderer });
+
+                // Assign the two LOD levels to the LODGroup
+                lodGroup.SetLODs(new LOD[] { lod0, lod1 });
                 lodGroup.RecalculateBounds();
 
                 // Assign impostor as child of source object
                 impostorCube.transform.SetParent(sourceObject.transform);
 
                 // Update status message
-                int totalLODs = lodGroup.GetLODs().Length;
-                statusMessage = $"Impostor added as LOD level {totalLODs - 1}. Total LOD levels: {totalLODs}.";
+                statusMessage = $"Impostor added as LOD level 1. Total LOD levels: 2.";
             }
             else
             {

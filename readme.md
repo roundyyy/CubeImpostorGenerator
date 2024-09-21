@@ -5,12 +5,12 @@
 
 ## Overview
 
-The Cube Impostor Generator is a simple yet powerful Unity Editor tool designed to create cube-shaped impostors for 3D objects. It's particularly useful for optimizing Unity scenes with many cube-like structures such as buildings, especially for highest LOD levels or distant objects.
+The Cube Impostor Generator is a simple yet useful Unity Editor tool designed to create cube-shaped impostors for 3D objects. It's particularly useful for optimizing Unity scenes with many cube-like structures such as buildings, especially for highest LOD levels or distant objects.
 
 ## Features
 
-- Generates cube-shaped impostors from complex 3D models in Unity
-- Creates atlas textures for all six faces of the cube
+- Generates cube-shaped impostors from complex and multi-material 3D models in Unity
+- Creates 1 atlas texture for all six faces of the cube
 - Supports LOD (Level of Detail) integration
 - Customizable texture size and trimming options
 - Applies to prefabs for easy integration into existing Unity projects
